@@ -8,6 +8,7 @@ type Account struct {
     Username  string    `gorm:"type:varchar(255);uniqueIndex;not null"` // 修改为 varchar 类型
     Password  string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
 	Phone     string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
+	MachineCode string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
     CreatedAt time.Time `gorm:"index"`
     UpdatedAt time.Time
 }

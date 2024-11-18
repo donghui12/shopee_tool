@@ -6,7 +6,7 @@ import (
     "github.com/gin-gonic/gin"
     "shopee_tool/internal/config"
     "shopee_tool/internal/database"
-    "shopee_tool/internal/auth"
+    "shopee_tool/internal/service"
     "shopee_tool/internal/api"
 )
 
@@ -25,13 +25,14 @@ func main() {
     }
 
     // 创建登录服务
-    loginService := auth.NewLoginService(db)
+    loginService := service.NewLoginService(db)
+    accountService := service.NewAccountService(db)
 
     // 创建 Gin 引擎
     engine := gin.Default()
 
     // 设置路由
-    router := api.NewRouter(loginService)
+    router := api.NewRouter(loginService, accountService)
     router.SetupRoutes(engine)
 
     // 启动服务器

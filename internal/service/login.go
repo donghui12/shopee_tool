@@ -1,4 +1,4 @@
-package auth
+package service
 
 import (
 	"shopee_tool/internal/database/models"
