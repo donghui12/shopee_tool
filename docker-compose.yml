@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: shopee_tool
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./configs:/app/configs
+      - ./logs:/app/logs
+    depends_on:
+      - mysql
+    environment:
+      - GIN_MODE=release
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: shopee_tool_mysql
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=your_root_password
+      - MYSQL_DATABASE=shopee_tool
+      - MYSQL_USER=shopee
+      - MYSQL_PASSWORD=your_password
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: unless-stopped
+
+volumes:
+  mysql_data: 
