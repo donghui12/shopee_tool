@@ -86,8 +86,6 @@ func (c *Client) Login(phone, password, vcode string) error {
     // 设置表单请求头
     req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
 
-	fmt.Printf("this is req: %+v\n", req.Body)
-
     // 执行请求
     resp, err := c.executeWithRetry(req)
     if err != nil {

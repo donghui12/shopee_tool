@@ -8,6 +8,7 @@ import (
 type LoginRequest struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+	Vcode    string `json:"vcode"`
 }
 
 type Response struct {
@@ -27,7 +28,7 @@ func (r *Router) handleLogin(c *gin.Context) {
 	}
 
 	// 调用登录服务
-	cookies, err := r.loginService.Login(req.Username, req.Password, "")
+	cookies, err := r.loginService.Login(req.Username, req.Password, req.Vcode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, Response{
 			Code:    500,
