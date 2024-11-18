@@ -1,9 +1,12 @@
 package auth
 
 import (
-	"net/http"
 	"shopee_tool/internal/database/models"
+	"shopee_tool/pkg/shopee"
+	"time"
+	"fmt"
 	"gorm.io/gorm"
+	"encoding/json"
 )
 
 type LoginService struct {
@@ -24,46 +27,63 @@ type CookieInfo struct {
 	Secure   bool   `json:"secure"`
 }
 
-func (s *LoginService) Login(username, password string) ([]CookieInfo, error) {
-	// TODO: 实现实际的虾皮登录逻辑
-	// 这里是示例代码
-	cookies := []CookieInfo{
-		{
-			Name:     "SPC_EC",
-			Value:    "example_cookie_value",
-			Domain:   ".shopee.com",
-			Path:     "/",
-			Expires:  "2024-12-31T23:59:59Z",
-			HttpOnly: true,
-			Secure:   true,
-		},
-	}
-
-	// 保存账号信息
-	account := &models.Account{
-		Username: username,
-		Password: password, // 注意：实际使用时需要加密存储
-	}
+func (s *LoginService) Login(username, password, vcode string) ([]CookieInfo, error) {
+	client := shopee.NewClient(
+		shopee.WithTimeout(30*time.Second),
+		shopee.WithRetry(3, 5*time.Second),
+	)
 	
-	if err := s.db.Create(account).Error; err != nil {
+	// 执行登录
+	err := client.Login(username, password, vcode)
+	if err != nil {
 		return nil, err
 	}
-
-	// 保存 cookie 信息
+	
+	// 获取cookies
+	cookies := client.GetCookies()
+	
+	// 转换cookie格式
+	var cookieInfos []CookieInfo
 	for _, cookie := range cookies {
-		dbCookie := &models.Cookie{
-			AccountID: account.ID,
+		cookieInfo := CookieInfo{
 			Name:     cookie.Name,
 			Value:    cookie.Value,
 			Domain:   cookie.Domain,
 			Path:     cookie.Path,
-			// 需要将 cookie.Expires 字符串解析为 time.Time
+			Expires:  cookie.Expires.Format(time.RFC3339),
+			HttpOnly: cookie.HttpOnly,
+			Secure:   cookie.Secure,
 		}
-		
-		if err := s.db.Create(dbCookie).Error; err != nil {
-			return nil, err
-		}
+		cookieInfos = append(cookieInfos, cookieInfo)
+	}
+	
+	// 保存到数据库
+	if err := s.saveCookies(username, cookieInfos); err != nil {
+		return nil, err
+	}
+	
+	return cookieInfos, nil
+}
+
+func (s *LoginService) saveCookies(username string, cookies []CookieInfo) error {
+	// TODO: 实现保存cookie到数据库的逻辑
+	// 将cookie转换为JSON字符串
+	cookieJSON, err := json.Marshal(cookies)
+	if err != nil {
+		return fmt.Errorf("序列化cookie失败: %w", err)
 	}
 
-	return cookies, nil
-} 
+	// 更新数据库中的cookie记录
+	result := s.db.Model(&models.Cookie{}).
+		Where("username = ?", username).
+		Update("cookies", string(cookieJSON))
+	
+	if result.Error != nil {
+		return fmt.Errorf("保存cookie失败: %w", result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("未找到用户: %s", username)
+	}
+	return nil
+}

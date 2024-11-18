@@ -1,11 +1,15 @@
 # 构建阶段
 FROM golang:1.21-alpine AS builder
 
+# 安装必要的构建工具
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    make \
+    git
+
 # 设置工作目录
 WORKDIR /app
-
-# 安装基本工具
-RUN apk add --no-cache gcc musl-dev
 
 # 复制 go.mod 和 go.sum
 COPY go.mod go.sum ./
@@ -16,8 +20,13 @@ RUN go mod download
 # 复制源代码
 COPY . .
 
+# 设置 CGO
+ENV CGO_ENABLED=1
+ENV GOOS=linux
+ENV GOARCH=amd64
+
 # 构建应用
-RUN CGO_ENABLED=1 GOOS=linux go build -o shopee_tool ./cmd/main.go
+RUN go build -o shopee_tool ./cmd/main.go
 
 # 运行阶段
 FROM alpine:latest

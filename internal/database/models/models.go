@@ -4,10 +4,11 @@ import "time"
 
 // Account 存储虾皮账号信息
 type Account struct {
-    ID        uint      `gorm:"primaryKey"`
-    Username  string    `gorm:"uniqueIndex;not null"`
-    Password  string    `gorm:"not null"`
-    CreatedAt time.Time
+    ID        uint      `gorm:"primarykey"`
+    Username  string    `gorm:"type:varchar(255);uniqueIndex;not null"` // 修改为 varchar 类型
+    Password  string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
+	Phone     string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
+    CreatedAt time.Time `gorm:"index"`
     UpdatedAt time.Time
 }
 
