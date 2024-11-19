@@ -9,8 +9,17 @@ type Account struct {
     Password  string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
 	Phone     string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
 	MachineCode string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
+	ActiveCode  string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
     CreatedAt time.Time `gorm:"index"`
     UpdatedAt time.Time
+}
+
+type ActiveCode struct {
+	ID        uint      `gorm:"primaryKey"`
+	Code      string    `gorm:"not null"`
+	ExpiredAt time.Time `gorm:"not null"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Cookie 存储登录后的 cookie 信息

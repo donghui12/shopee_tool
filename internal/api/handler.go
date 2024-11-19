@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"github.com/google/uuid"
 )
 
 type LoginRequest struct {
@@ -86,5 +87,38 @@ func (r *Router) handleGetMachineCode(c *gin.Context) {
 		Code:    200,
 		Message: "获取机器码成功",
 		Data:    machineCode,
+	})
+}
+
+func (r *Router) handleGetActiveCode(c *gin.Context) {
+	username := c.Query("username")
+	activeCode, err := r.accountService.GetActiveCode(username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
+			Code:    500,
+			Message: "获取激活码失败: " + err.Error(),
+		})
+	}
+	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
+		Code:    200,
+		Message: "获取激活码成功",
+		Data:    activeCode,
+	})
+}
+
+func (r *Router) handleCreateActiveCode(c *gin.Context) {
+	expiredAt := c.Query("expired_at")
+	activeCode := uuid.New().String()
+	activeCode, err := r.activeCodeService.CreateActiveCode(activeCode, expiredAt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
+			Code:    500,
+			Message: "创建激活码失败: " + err.Error(),
+		})
+	}
+	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
+		Code:    200,
+		Message: "创建激活码成功",
+		Data:    activeCode,
 	})
 }
