@@ -19,8 +19,8 @@ func (s *ActiveCodeService) CreateActiveCode(code, expiredAt string) (string, er
 	if code == "" || expiredAt == "" {
 		return "", errors.New("code and expiredAt cannot be empty")
 	}
-	// 将 expiredAt 转换为 time.Time
-	expiredAtTime, err := time.Parse(time.RFC3339, expiredAt)
+
+	expiredAtTime, err := time.Parse("2006-01-02 15:04:05", expiredAt)
 	if err != nil {
 		return "", err
 	}

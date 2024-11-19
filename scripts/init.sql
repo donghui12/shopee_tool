@@ -90,3 +90,13 @@ INSERT INTO configs (`key`, value, description) VALUES
 -- 创建管理员账号（密码需要加密存储）
 INSERT INTO accounts (username, password, status) VALUES
     ('admin', '$2a$10$your_hashed_password', 1); 
+
+
+-- 创建 active_codes 表
+CREATE TABLE active_codes (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(255) NOT NULL,
+    expired_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

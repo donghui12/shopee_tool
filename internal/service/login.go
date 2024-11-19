@@ -6,7 +6,6 @@ import (
 	"time"
 	"fmt"
 	"gorm.io/gorm"
-	"encoding/json"
 )
 
 type LoginService struct {
@@ -27,7 +26,7 @@ type CookieInfo struct {
 	Secure   bool   `json:"secure"`
 }
 
-func (s *LoginService) Login(username, password, vcode string) ([]CookieInfo, error) {
+func (s *LoginService) Login(username, password, vcode string) error {
 	client := shopee.NewClient(
 		shopee.WithTimeout(30*time.Second),
 		shopee.WithRetry(3, 5*time.Second),
@@ -36,54 +35,33 @@ func (s *LoginService) Login(username, password, vcode string) ([]CookieInfo, er
 	// 执行登录
 	err := client.Login(username, password, vcode)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	
 	// 获取cookies
 	cookies := client.GetCookies()
-	
-	// 转换cookie格式
-	var cookieInfos []CookieInfo
-	for _, cookie := range cookies {
-		cookieInfo := CookieInfo{
-			Name:     cookie.Name,
-			Value:    cookie.Value,
-			Domain:   cookie.Domain,
-			Path:     cookie.Path,
-			Expires:  cookie.Expires.Format(time.RFC3339),
-			HttpOnly: cookie.HttpOnly,
-			Secure:   cookie.Secure,
-		}
-		cookieInfos = append(cookieInfos, cookieInfo)
+
+	// 创建账户
+	err = s.createAccount(username, cookies)
+	if err != nil {
+		return err
 	}
 	
-	// 保存到数据库
-	if err := s.saveCookies(username, cookieInfos); err != nil {
-		return nil, err
-	}
-	
-	return cookieInfos, nil
+	return nil
 }
 
-func (s *LoginService) saveCookies(username string, cookies []CookieInfo) error {
-	// TODO: 实现保存cookie到数据库的逻辑
-	// 将cookie转换为JSON字符串
-	cookieJSON, err := json.Marshal(cookies)
-	if err != nil {
-		return fmt.Errorf("序列化cookie失败: %w", err)
+func (s *LoginService) createAccount(username string, cookies string) error {
+	// 创建账户
+	account := models.Account{
+		Username: username,
+		Cookies:  cookies,
 	}
 
-	// 更新数据库中的cookie记录
-	result := s.db.Model(&models.Cookie{}).
-		Where("username = ?", username).
-		Update("cookies", string(cookieJSON))
-	
+	// 保存到数据库
+	result := s.db.Create(&account)
 	if result.Error != nil {
-		return fmt.Errorf("保存cookie失败: %w", result.Error)
+		return fmt.Errorf("创建账户失败: %w", result.Error)
 	}
 
-	if result.RowsAffected == 0 {
-		return fmt.Errorf("未找到用户: %s", username)
-	}
 	return nil
 }

@@ -120,8 +120,13 @@ func (c *Client) Login(phone, password, vcode string) error {
 }
 
 // GetCookies 获取cookies
-func (c *Client) GetCookies() []*http.Cookie {
-    return c.cookies
+func (c *Client) GetCookies() string {
+	// 转换cookie string
+	cookieJSON, err := json.Marshal(c.cookies)
+	if err != nil {
+		return ""
+	}
+	return string(cookieJSON)
 }
 
 // GetProductList 获取商品列表

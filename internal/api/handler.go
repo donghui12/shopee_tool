@@ -29,7 +29,7 @@ func (r *Router) handleLogin(c *gin.Context) {
 	}
 
 	// 调用登录服务
-	cookies, err := r.loginService.Login(req.Username, req.Password, req.Vcode)
+	err := r.loginService.Login(req.Username, req.Password, req.Vcode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, LoginResponse{
 			Code:    500,
@@ -41,9 +41,6 @@ func (r *Router) handleLogin(c *gin.Context) {
 	c.JSON(http.StatusOK, LoginResponse{
 		Code:    200,
 		Message: "登录成功",
-		Data: map[string]interface{}{
-			"cookies": cookies,
-		},
 	})
 }
 
@@ -71,7 +68,12 @@ func (r *Router) handleUpdateMachineCode(c *gin.Context) {
 			Code:    500,
 			Message: "更新机器码失败: " + err.Error(),
 		})
+		return
 	}
+	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
+		Code:    200,
+		Message: "更新机器码成功",
+	})
 }
 
 func (r *Router) handleGetMachineCode(c *gin.Context) {
@@ -82,6 +84,7 @@ func (r *Router) handleGetMachineCode(c *gin.Context) {
 			Code:    500,
 			Message: "获取机器码失败: " + err.Error(),
 		})
+		return
 	}
 	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
 		Code:    200,
@@ -99,6 +102,7 @@ func (r *Router) handleGetActiveCode(c *gin.Context) {
 			Code:    500,
 			Message: "获取激活码失败: " + err.Error(),
 		})
+		return
 	}
 	// 验证激活码是否有效
 	_, err = r.activeCodeService.GetActiveCode(activeCode)
@@ -107,6 +111,7 @@ func (r *Router) handleGetActiveCode(c *gin.Context) {
 			Code:    500,
 			Message: "获取激活码失败: " + err.Error(),
 		})
+		return
 	}
 	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
 		Code:    200,
@@ -115,19 +120,60 @@ func (r *Router) handleGetActiveCode(c *gin.Context) {
 	})
 }
 
+type UpdateActiveCodeRequest struct {
+	ExpiredAt string `json:"expired_at"`
+}
+
 func (r *Router) handleCreateActiveCode(c *gin.Context) {
-	expiredAt := c.Query("expired_at")
-	activeCode := uuid.New().String()
-	activeCode, err := r.activeCodeService.CreateActiveCode(activeCode, expiredAt)
+	var req UpdateActiveCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, UpdateMachineCodeResponse{
+			Code:    400,
+			Message: "参数错误: " + err.Error(),
+		})
+	}
+
+	currentActiveCode := uuid.New().String()
+	activeCode, err := r.activeCodeService.CreateActiveCode(currentActiveCode, req.ExpiredAt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
 			Code:    500,
 			Message: "创建激活码失败: " + err.Error(),
 		})
+		return
 	}
 	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
 		Code:    200,
 		Message: "创建激活码成功",
 		Data:    activeCode,
+	})
+}
+
+type BindActiveCodeRequest struct {
+	Username  string `json:"username"`
+	ActiveCode string `json:"active_code"`
+}
+
+// 绑定激活码
+func (r *Router) handleBindActiveCode(c *gin.Context) {
+	var req BindActiveCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, UpdateMachineCodeResponse{
+			Code:    400,
+			Message: "参数错误: " + err.Error(),
+		})
+	}
+	// 绑定激活码
+	err := r.accountService.UpdateActiveCode(req.Username, req.ActiveCode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
+			Code:    500,
+			Message: "绑定激活码失败: " + err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
+		Code:    200,
+		Message: "绑定激活码成功",
 	})
 }

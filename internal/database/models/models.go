@@ -10,6 +10,7 @@ type Account struct {
 	Phone     string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
 	MachineCode string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
 	ActiveCode  string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
+	Cookies     string    `gorm:"type:text"`
     CreatedAt time.Time `gorm:"index"`
     UpdatedAt time.Time
 }
