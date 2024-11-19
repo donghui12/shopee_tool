@@ -45,8 +45,10 @@ func (s *AccountService) GetActiveCode(username string) (string, error) {
 }
 
 func (s *AccountService) GetCookies(username string) (string, error) {
-	var cookies string
-	result := s.db.Model(&models.Account{}).
-		Where("username = ?", username).Select("cookies").Scan(&cookies)
-	return cookies, result.Error
+    var account models.Account
+    result := s.db.Where("username = ?", username).First(&account)
+    if result.Error != nil {
+        return "", result.Error
+    }
+    return account.Cookies, nil
 }

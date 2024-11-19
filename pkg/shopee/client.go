@@ -64,7 +64,8 @@ func NewClient(options ...ClientOption) *Client {
 }
 
 // Login 登录
-func (c *Client) Login(phone, password, vcode string) error {
+func (c *Client) Login(phone, password, vcode string) (string, error) {
+	cookieString := "" 
     // 构建表单数据
 	urlValue := url.Values{}
 	urlValue.Set("password_hash", MD5Hash(password))
@@ -80,7 +81,7 @@ func (c *Client) Login(phone, password, vcode string) error {
     // 创建请求
     req, err := http.NewRequest(HTTPMethodPost, c.baseURL+APIPathLogin, strings.NewReader(reqBody))
     if err != nil {
-        return fmt.Errorf("create login request failed: %w", err)
+        return cookieString, fmt.Errorf("create login request failed: %w", err)
     }
 
     // 设置表单请求头
@@ -89,34 +90,38 @@ func (c *Client) Login(phone, password, vcode string) error {
     // 执行请求
     resp, err := c.executeWithRetry(req)
     if err != nil {
-        return fmt.Errorf("login request failed: %w", err)
+        return cookieString, fmt.Errorf("login request failed: %w", err)
     }
     defer resp.Body.Close()
 
     // 读取响应
     body, err := io.ReadAll(resp.Body)
     if err != nil {
-        return fmt.Errorf("read login response failed: %w", err)
+        return cookieString, fmt.Errorf("read login response failed: %w", err)
     }
 
     // 解析响应
     var loginResp LoginResponse
     if err := json.Unmarshal(body, &loginResp); err != nil {
-        return fmt.Errorf("parse login response failed: %w", err)
+        return cookieString, fmt.Errorf("parse login response failed: %w", err)
     }
 
     // 检查响应状态
     if loginResp.Code != ResponseCodeSuccess {
-        return fmt.Errorf("login failed: %s", loginResp.Message)
+        return cookieString, fmt.Errorf("login failed: %s", loginResp.Message)
     }
 	if loginResp.Message == "error_need_vcode" || loginResp.Message == "error_invalid_vcode" {
-		return fmt.Errorf("login failed: %s", loginResp.Message)
+		return cookieString, fmt.Errorf("login failed: %s", loginResp.Message)
 	}
 
     // 保存 cookies
     c.cookies = resp.Cookies()
+	// 将 cookie 转换为字符串
+	for _, cookie := range c.cookies {
+		cookieString += cookie.Name + "=" + cookie.Value + "; "
+	}
 
-    return nil
+    return cookieString, nil
 }
 
 // GetCookies 获取cookies
@@ -132,7 +137,7 @@ func (c *Client) GetCookies() string {
 // GetProductList 获取商品列表
 func (c *Client) GetProductList(cookies string) (*ProductListResponse, error) {
     var resp ProductListResponse
-    err := c.doRequest(HTTPMethodPost, APIPathProductList, nil, &resp, cookies)
+    err := c.doRequest(HTTPMethodGet, APIPathProductList, nil, &resp, cookies)
     if err != nil {
         return nil, fmt.Errorf("get product list failed: %w", err)
     }
@@ -199,7 +204,7 @@ func (c *Client) UpdateProductInfo(productID int64, cookies string) error {
 func (c *Client) doRequest(method, path string, reqBody interface{}, respBody interface{}, cookies string) error {
     url := c.baseURL + path
 
-    var bodyReader *bytes.Buffer
+    var bodyReader io.Reader
     if reqBody != nil {
         jsonData, err := json.Marshal(reqBody)
         if err != nil {

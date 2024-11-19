@@ -74,7 +74,7 @@ func findProjectRoot(t *testing.T) string {
 
 // loginTestClient 登录测试客户端
 func loginTestClient(t *testing.T, client *Client, config *TestConfig) {
-    err := client.Login(config.Phone, config.Password, "")
+    _, err := client.Login(config.Phone, config.Password, "")
     if err != nil {
         t.Fatalf("登录失败: %v", err)
     }
