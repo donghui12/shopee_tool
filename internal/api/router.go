@@ -9,14 +9,16 @@ type Router struct {
 	loginService *service.LoginService
 	accountService *service.AccountService
 	activeCodeService *service.ActiveCodeService
+	orderService *service.OrderService
 }
 
 func NewRouter(loginService *service.LoginService, accountService *service.AccountService, 
-	 activeCodeService *service.ActiveCodeService) *Router {
+	 activeCodeService *service.ActiveCodeService, orderService *service.OrderService) *Router {
 	return &Router{
 		loginService: loginService,
 		accountService: accountService,
 		activeCodeService: activeCodeService,
+		orderService: orderService,
 	}
 }
 
@@ -31,13 +33,14 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			shopee.GET("/machine-code", r.handleGetMachineCode)
 			// 更新账户机器码
 			shopee.POST("/machine-code", r.handleUpdateMachineCode)
-
 			// 绑定账户和激活码
 			shopee.POST("/bind-active-code", r.handleBindActiveCode)
 			// 获取账户激活码
 			shopee.GET("/active-code", r.handleGetActiveCode)
 			// 创建激活码
 			shopee.POST("/active-code", r.handleCreateActiveCode)
+			// 更新账户下全部商品的库存
+			shopee.POST("/update-order", r.handleUpdateOrder)
 		}
 	}
 } 

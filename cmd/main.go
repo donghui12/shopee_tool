@@ -28,12 +28,13 @@ func main() {
     loginService := service.NewLoginService(db)
     accountService := service.NewAccountService(db)
 	activeCodeService := service.NewActiveCodeService(db)
+	orderService := service.NewOrderService(db)
 
     // 创建 Gin 引擎
     engine := gin.Default()
 
     // 设置路由
-    router := api.NewRouter(loginService, accountService, activeCodeService)
+    router := api.NewRouter(loginService, accountService, activeCodeService, orderService)
     router.SetupRoutes(engine)
 
     // 启动服务器

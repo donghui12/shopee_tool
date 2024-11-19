@@ -177,3 +177,35 @@ func (r *Router) handleBindActiveCode(c *gin.Context) {
 		Message: "绑定激活码成功",
 	})
 }
+
+type UpdateOrderRequest struct {
+	Username string `json:"username"`
+}
+
+// 更新账户下全部商品的库存
+func (r *Router) handleUpdateOrder(c *gin.Context) {
+	var req UpdateOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, UpdateMachineCodeResponse{
+			Code:    400,
+			Message: "参数错误: " + err.Error(),
+		})
+	}
+	// 获取 cookies
+	cookies, err := r.accountService.GetCookies(req.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
+			Code:    500,
+			Message: "获取 cookies 失败: " + err.Error(),
+		})
+	}
+
+	// 更新账户下全部商品的库存
+	err = r.orderService.UpdateOrder(cookies)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
+			Code:    500,
+			Message: "更新库存失败: " + err.Error(),
+		})
+	}
+}

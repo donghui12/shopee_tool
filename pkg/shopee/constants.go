@@ -9,6 +9,7 @@ const (
     APIPathLogin = "/api/cnsc/selleraccount/login/"
 
     // 商品相关接口
+	APIPathUpdateProductInfo = "/api/v3/product/update_product_info"
     APIPathProductList = "/api/v3/mpsku/list/v2/get_product_list"
     APIPathProductDetail = "/api/v3/product/get_product_detail"
     APIPathProductUpdate = "/api/v3/product/update_product"

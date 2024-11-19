@@ -43,3 +43,10 @@ func (s *AccountService) GetActiveCode(username string) (string, error) {
 		Select("active_code").Scan(&activeCode)
 	return activeCode, result.Error
 }
+
+func (s *AccountService) GetCookies(username string) (string, error) {
+	var cookies string
+	result := s.db.Model(&models.Account{}).
+		Where("username = ?", username).Select("cookies").Scan(&cookies)
+	return cookies, result.Error
+}

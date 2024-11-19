@@ -130,9 +130,9 @@ func (c *Client) GetCookies() string {
 }
 
 // GetProductList 获取商品列表
-func (c *Client) GetProductList(req *ProductListRequest) (*ProductListResponse, error) {
+func (c *Client) GetProductList(cookies string) (*ProductListResponse, error) {
     var resp ProductListResponse
-    err := c.doRequest(HTTPMethodPost, APIPathProductList, req, &resp)
+    err := c.doRequest(HTTPMethodPost, APIPathProductList, nil, &resp, cookies)
     if err != nil {
         return nil, fmt.Errorf("get product list failed: %w", err)
     }
@@ -144,8 +144,59 @@ func (c *Client) GetProductList(req *ProductListRequest) (*ProductListResponse, 
     return &resp, nil
 }
 
+// UpdateProductInfoRequest 更新商品信息请求
+type UpdateProductInfoRequest struct {
+    ProductID int64       `json:"product_id"`
+    ProductInfo ProductInfo `json:"product_info"`
+    IsDraft   bool       `json:"is_draft"`
+}
+
+// ProductInfo 商品信息
+type ProductInfo struct {
+    EnableModelLevelDts bool         `json:"enable_model_level_dts"`
+    PreOrderInfo       PreOrderInfo `json:"pre_order_info"`
+}
+
+// PreOrderInfo 预售信息
+type PreOrderInfo struct {
+    PreOrder    bool `json:"pre_order"`
+    DaysToShip  int  `json:"days_to_ship"`
+}
+
+// UpdateProductInfoResponse 更新商品信息响应
+type UpdateProductInfoResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	UserMessage string `json:"user_message"`
+	Data struct {
+		ProductID int64 `json:"product_id"`
+	} `json:"data"`
+}
+
+// UpdateProductInfo 更新商品信息
+func (c *Client) UpdateProductInfo(productID int64, cookies string) error {
+	req := &UpdateProductInfoRequest{
+		ProductID: productID,
+		ProductInfo: ProductInfo{
+			EnableModelLevelDts: false,
+			PreOrderInfo: PreOrderInfo{
+				PreOrder:    true,
+				DaysToShip:  10,
+			},
+		},
+		IsDraft:   false,
+	}
+
+	var resp UpdateProductInfoResponse
+	err := c.doRequest(HTTPMethodPost, APIPathUpdateProductInfo, req, &resp, cookies)
+	if err != nil {
+		return fmt.Errorf("update product info failed: %w", err)
+	}
+	return nil
+}
+
 // doRequest 执行请求
-func (c *Client) doRequest(method, path string, reqBody interface{}, respBody interface{}) error {
+func (c *Client) doRequest(method, path string, reqBody interface{}, respBody interface{}, cookies string) error {
     url := c.baseURL + path
 
     var bodyReader *bytes.Buffer
@@ -164,6 +215,7 @@ func (c *Client) doRequest(method, path string, reqBody interface{}, respBody in
 
     // 设置 JSON 请求头
     req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Cookie", cookies)
     c.setCommonHeaders(req)
 
     resp, err := c.executeWithRetry(req)
