@@ -37,7 +37,7 @@ func (s *ActiveCodeService) CreateActiveCode(code, expiredAt string) (string, er
 
 func (s *ActiveCodeService) GetActiveCode(code string) (string, error) {
 	var activeCode models.ActiveCode
-	result := s.db.Where("code = ?", code).First(&activeCode)
+	result := s.db.Where("code = ? and expired_at > ?", code, time.Now()).First(&activeCode)
 	if result.Error != nil {
 		return "", result.Error
 	}

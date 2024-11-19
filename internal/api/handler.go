@@ -92,7 +92,16 @@ func (r *Router) handleGetMachineCode(c *gin.Context) {
 
 func (r *Router) handleGetActiveCode(c *gin.Context) {
 	username := c.Query("username")
+	// 获取激活码
 	activeCode, err := r.accountService.GetActiveCode(username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
+			Code:    500,
+			Message: "获取激活码失败: " + err.Error(),
+		})
+	}
+	// 验证激活码是否有效
+	_, err = r.activeCodeService.GetActiveCode(activeCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
 			Code:    500,
