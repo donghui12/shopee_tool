@@ -110,8 +110,14 @@ func (c *Client) Login(phone, password, vcode string) (string, error) {
     if loginResp.Code != ResponseCodeSuccess {
         return cookieString, fmt.Errorf("login failed: %s", loginResp.Message)
     }
-	if loginResp.Message == "error_need_vcode" || loginResp.Message == "error_invalid_vcode" {
-		return cookieString, fmt.Errorf("login failed: %s", loginResp.Message)
+	if loginResp.Message == "error_need_vcode"{
+		return cookieString, fmt.Errorf("需要验证码")
+	}
+	if loginResp.Message == "error_invalid_vcode" {
+		return cookieString, fmt.Errorf("验证码错误")
+	}
+	if loginResp.Message == "error_name_or_password_incorrect" {
+		return cookieString, fmt.Errorf("账号或密码错误")
 	}
 
     // 保存 cookies
