@@ -30,17 +30,21 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 			// 登录
 			shopee.POST("/login", r.handleLogin)
 			// 获取机器码
-			shopee.GET("/machine-code", r.handleGetMachineCode)
+			shopee.GET("/mechine_code", r.handleGetMachineCode)
 			// 更新账户机器码
-			shopee.POST("/machine-code", r.handleUpdateMachineCode)
+			shopee.POST("/mechine_code", r.handleUpdateMachineCode)
 			// 绑定账户和激活码
-			shopee.POST("/bind-active-code", r.handleBindActiveCode)
+			shopee.POST("/bind_active_code", r.handleBindActiveCode)
+
+			// 验证激活码
+			shopee.GET("/verify_active_code", r.handleVerifyActiveCode)
+
 			// 获取账户激活码
-			shopee.GET("/active-code", r.handleGetActiveCode)
+			shopee.GET("/active_code", r.handleGetActiveCode)
 			// 创建激活码
-			shopee.POST("/active-code", r.handleCreateActiveCode)
+			shopee.POST("/active_code", r.handleCreateActiveCode)
 			// 更新账户下全部商品的库存
-			shopee.POST("/update-order", r.handleUpdateOrder)
+			shopee.POST("/update_order", r.handleUpdateOrder)
 		}
 	}
 } 

@@ -21,12 +21,20 @@ func (s *AccountService) UpdateMachineCode(username, MachineCode string) error {
 	return result.Error
 }
 
-func (s *AccountService) GetMachineCode(username string) (string, error) {
-	var machineCode string
+func (s *AccountService) GetMachineCode(username, machineCode string) error {
+	var selectMachineCode string
 	result := s.db.Model(&models.Account{}).
-		Where("username = ?", username).
-		Select("machine_code").Scan(&machineCode)
-	return machineCode, result.Error
+		Where("username = ? AND machine_code = ?", username, machineCode).
+		Select("machine_code").Scan(&selectMachineCode)
+	return result.Error
+}
+
+func (s *AccountService) GetActiveCodeByActiveCode(activeCode string) error {
+	var selectActiveCode string
+	result := s.db.Model(&models.Account{}).
+		Where("active_code = ?", activeCode).
+		Select("active_code").Scan(&selectActiveCode)
+	return result.Error
 }
 
 func (s *AccountService) UpdateActiveCode(username, activeCode string) error {

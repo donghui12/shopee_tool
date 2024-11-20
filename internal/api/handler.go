@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"github.com/google/uuid"
+	"fmt"
 )
 
 type LoginRequest struct {
@@ -31,8 +32,8 @@ func (r *Router) handleLogin(c *gin.Context) {
 	// 调用登录服务
 	err := r.loginService.Login(req.Username, req.Password, req.Vcode)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, LoginResponse{
-			Code:    500,
+		c.JSON(http.StatusOK, LoginResponse{
+			Code:    410,
 			Message: "登录失败: " + err.Error(),
 		})
 		return
@@ -78,7 +79,9 @@ func (r *Router) handleUpdateMachineCode(c *gin.Context) {
 
 func (r *Router) handleGetMachineCode(c *gin.Context) {
 	username := c.Query("username")
-	machineCode, err := r.accountService.GetMachineCode(username)
+	machineCode := c.Query("machine_code")
+	fmt.Println("machineCode: ", machineCode)
+	err := r.accountService.GetMachineCode(username, machineCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
 			Code:    500,
@@ -89,7 +92,6 @@ func (r *Router) handleGetMachineCode(c *gin.Context) {
 	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
 		Code:    200,
 		Message: "获取机器码成功",
-		Data:    machineCode,
 	})
 }
 
@@ -175,6 +177,35 @@ func (r *Router) handleBindActiveCode(c *gin.Context) {
 	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
 		Code:    200,
 		Message: "绑定激活码成功",
+	})
+}
+
+type VerifyActiveCodeRequest struct {
+	ActiveCode string `json:"active_code"`
+}
+
+func (r *Router) handleVerifyActiveCode(c *gin.Context) {
+	activeCode := c.Query("active_code")
+	// 验证激活码是否有效
+	_, err := r.activeCodeService.GetActiveCode(activeCode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
+				Code:    500,
+				Message: "获取激活码失败: " + err.Error(),
+			})
+			return
+	}
+	err = r.accountService.GetActiveCodeByActiveCode(activeCode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
+			Code:    500,
+			Message: "激活码已被绑定: " + err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
+		Code:    200,
+		Message: "激活码有效",
 	})
 }
 
