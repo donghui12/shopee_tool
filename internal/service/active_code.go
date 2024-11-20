@@ -35,11 +35,13 @@ func (s *ActiveCodeService) CreateActiveCode(code, expiredAt string) (string, er
 	return activeCode.Code, nil
 }
 
-func (s *ActiveCodeService) GetActiveCode(code string) (string, error) {
+func (s *ActiveCodeService) GetActiveCode(code string) (int, error) {
 	var activeCode models.ActiveCode
 	result := s.db.Where("code = ? and expired_at > ?", code, time.Now()).First(&activeCode)
 	if result.Error != nil {
-		return "", result.Error
+		return 0, result.Error
 	}
-	return activeCode.Code, nil
+	// 查看距离过期还有多少天
+	day := activeCode.ExpiredAt.Sub(time.Now()).Hours() / 24
+	return int(day), nil
 }

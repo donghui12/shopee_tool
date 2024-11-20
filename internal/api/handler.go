@@ -107,7 +107,7 @@ func (r *Router) handleGetActiveCode(c *gin.Context) {
 		return
 	}
 	// 验证激活码是否有效
-	_, err = r.activeCodeService.GetActiveCode(activeCode)
+	day, err := r.activeCodeService.GetActiveCode(activeCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
 			Code:    500,
@@ -118,7 +118,7 @@ func (r *Router) handleGetActiveCode(c *gin.Context) {
 	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
 		Code:    200,
 		Message: "获取激活码成功",
-		Data:    activeCode,
+		Data:    day,
 	})
 }
 
