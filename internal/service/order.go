@@ -15,7 +15,7 @@ func NewOrderService(db *gorm.DB) *OrderService {
 	return &OrderService{db: db}
 }
 
-func (s *OrderService) UpdateOrder(cookies string) error {
+func (s *OrderService) UpdateOrder(cookies string, day int) error {
 
 	// 2. 构建请求参数
 	client := shopee.NewClient(
@@ -31,7 +31,7 @@ func (s *OrderService) UpdateOrder(cookies string) error {
 
 	// 4. 遍历商品列表，更新库存
 	for _, product := range productList.Data.Products {
-		err = client.UpdateProductInfo(product.ProductID, cookies)
+		err = client.UpdateProductInfo(product.ProductID, cookies, day)
 		if err != nil {
 			return err
 		}

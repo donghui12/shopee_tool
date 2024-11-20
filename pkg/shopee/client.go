@@ -185,14 +185,14 @@ type UpdateProductInfoResponse struct {
 }
 
 // UpdateProductInfo 更新商品信息
-func (c *Client) UpdateProductInfo(productID int64, cookies string) error {
+func (c *Client) UpdateProductInfo(productID int64, cookies string, day int) error {
 	req := &UpdateProductInfoRequest{
 		ProductID: productID,
 		ProductInfo: ProductInfo{
 			EnableModelLevelDts: false,
 			PreOrderInfo: PreOrderInfo{
 				PreOrder:    true,
-				DaysToShip:  10,
+				DaysToShip:  day,
 			},
 		},
 		IsDraft:   false,
