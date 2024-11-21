@@ -9,6 +9,8 @@ import (
     "strings"
     "time"
 	"net/url"
+	"strconv"
+	"github.com/google/uuid"
 )
 
 type Client struct {
@@ -124,7 +126,9 @@ func (c *Client) Login(phone, password, vcode string) (string, error) {
     c.cookies = resp.Cookies()
 	// 将 cookie 转换为字符串
 	for _, cookie := range c.cookies {
-		cookieString += cookie.Name + "=" + cookie.Value + "; "
+		if cookie.Name == "SPC_CNSC_SESSION" {
+			cookieString += cookie.Name + "=" + cookie.Value + "; "
+		}
 	}
 
     return cookieString, nil
@@ -140,19 +144,91 @@ func (c *Client) GetCookies() string {
 	return string(cookieJSON)
 }
 
+// get_merchant_shop_list
+func (c *Client) GetMerchantShopList(cookies string) ([]MerchantShop, error) {
+	merchantShopListResp := &MerchantShopListResponse{}
+	resp, err := c.doRequest(HTTPMethodGet, APIPathGetMerchantShopList, nil, cookies)
+	if err != nil {
+		return nil, fmt.Errorf("get merchant shop list failed: %w", err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read response body failed: %w", err)
+	}
+	err = json.Unmarshal(body, &merchantShopListResp)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal merchant shop list response failed: %w", err)
+	}
+	return merchantShopListResp.Data.Shops, nil
+}
+
 // GetProductList 获取商品列表
-func (c *Client) GetProductList(cookies string) (*ProductListResponse, error) {
-    var resp ProductListResponse
-    err := c.doRequest(HTTPMethodGet, APIPathProductList, nil, &resp, cookies)
-    if err != nil {
-        return nil, fmt.Errorf("get product list failed: %w", err)
-    }
+func (c *Client) GetProductList(cookies, shopID, region string) ([]int64, error) {
 
-    if resp.Code != ResponseCodeSuccess {
-        return nil, fmt.Errorf("get product list failed: %s", resp.Message)
-    }
+	var productIDs []int64
+	var productIDMap = make(map[int64]bool)
 
-    return &resp, nil
+	SPC_CDS := uuid.New().String()
+	cookies += "SPC_CDS=" + SPC_CDS + ";"
+	getProductListParams := url.Values{}
+	getProductListParams.Set("SPC_CDS", SPC_CDS)
+	getProductListParams.Set("SPC_CDS_VER", "2")
+	getProductListParams.Set("list_type", "all")
+	getProductListParams.Set("need_ads", "true")
+	getProductListParams.Set("cnsc_shop_id", shopID)
+	getProductListParams.Set("cbsc_shop_region", region)
+
+	pageNumber := 1
+	pageSize := 48
+	total := 0
+	for {
+		productListResp := &ProductListResponse{}
+		getProductListParams.Set("page_number", strconv.Itoa(pageNumber))
+		getProductListParams.Set("page_size", strconv.Itoa(pageSize))
+
+		APIProductList := APIPathProductList + "?" + getProductListParams.Encode()
+		fmt.Printf("APIProductList: %s\n", APIProductList)
+		fmt.Printf("cookies: %s\n", cookies)
+
+		resp, err := c.doRequest(HTTPMethodGet, APIProductList, nil, cookies)
+		if err != nil {
+			return nil, fmt.Errorf("get product list failed: %w", err)
+		}
+
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("read response body failed: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("get product list failed: %s", string(body))
+		}
+
+		err = json.Unmarshal(body, &productListResp)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal product list response failed: %w", err)
+		}
+
+		for _, product := range productListResp.Data.Products {
+			for _, campaign := range product.PromotionDetail.OngoingCampaigns {
+				productIDMap[int64(campaign.ProductID)] = true
+			}
+		}
+
+		total += len(productListResp.Data.Products)
+		if total >= productListResp.Data.PageInfo.Total {
+			break
+		}
+		pageNumber++
+	}
+
+	for productID := range productIDMap {
+		productIDs = append(productIDs, productID)
+	}
+
+	return productIDs, nil
 }
 
 // UpdateProductInfoRequest 更新商品信息请求
@@ -198,30 +274,35 @@ func (c *Client) UpdateProductInfo(productID int64, cookies string, day int) err
 		IsDraft:   false,
 	}
 
-	var resp UpdateProductInfoResponse
-	err := c.doRequest(HTTPMethodPost, APIPathUpdateProductInfo, req, &resp, cookies)
+	var updateProductInfoResp UpdateProductInfoResponse
+	resp, err := c.doRequest(HTTPMethodPost, APIPathUpdateProductInfo, req, cookies)
 	if err != nil {
 		return fmt.Errorf("update product info failed: %w", err)
+	}
+
+	err = c.handleResponse(resp, &updateProductInfoResp)
+	if err != nil {
+		return fmt.Errorf("handle update product info response failed: %w", err)
 	}
 	return nil
 }
 
 // doRequest 执行请求
-func (c *Client) doRequest(method, path string, reqBody interface{}, respBody interface{}, cookies string) error {
+func (c *Client) doRequest(method, path string, reqBody interface{}, cookies string) (*http.Response, error) {
     url := c.baseURL + path
 
     var bodyReader io.Reader
     if reqBody != nil {
         jsonData, err := json.Marshal(reqBody)
         if err != nil {
-            return fmt.Errorf("marshal request body failed: %w", err)
+            return nil, fmt.Errorf("marshal request body failed: %w", err)
         }
         bodyReader = bytes.NewBuffer(jsonData)
     }
 
     req, err := http.NewRequest(method, url, bodyReader)
     if err != nil {
-        return fmt.Errorf("create request failed: %w", err)
+        return nil, fmt.Errorf("create request failed: %w", err)
     }
 
     // 设置 JSON 请求头
@@ -231,11 +312,10 @@ func (c *Client) doRequest(method, path string, reqBody interface{}, respBody in
 
     resp, err := c.executeWithRetry(req)
     if err != nil {
-        return err
+        return nil, fmt.Errorf("execute request failed: %w", err)
     }
-    defer resp.Body.Close()
 
-    return c.handleResponse(resp, respBody)
+    return resp, nil
 }
 
 // handleResponse 处理响应
@@ -253,9 +333,12 @@ func (c *Client) handleResponse(resp *http.Response, result interface{}) error {
         return nil
     }
 
-    if err := json.Unmarshal(body, result); err != nil {
+	var productListResp ProductListResponse
+
+    if err := json.Unmarshal(body, &productListResp); err != nil {
         return fmt.Errorf("unmarshal response failed: %w", err)
     }
+	fmt.Printf("productListResp: %v\n", productListResp.Data.Products)
 
     return nil
 }

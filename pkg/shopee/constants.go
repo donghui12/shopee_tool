@@ -13,6 +13,7 @@ const (
     APIPathProductList = "/api/v3/mpsku/list/v2/get_product_list"
     APIPathProductDetail = "/api/v3/product/get_product_detail"
     APIPathProductUpdate = "/api/v3/product/update_product"
+	APIPathGetMerchantShopList = "/api/cnsc/selleraccount/get_merchant_shop_list/"
     
     // 订单相关接口
     APIPathOrderList = "/api/v3/order/get_order_list"

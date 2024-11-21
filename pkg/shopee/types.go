@@ -28,25 +28,35 @@ type ProductListRequest struct {
     SortType   int    `json:"sort_type,omitempty"`
 }
 
+type OngoingCampaigns struct {
+    ProductID    int `json:"product_id"`
+}
+
+type PromotionDetail struct {
+    OngoingCampaigns []OngoingCampaigns `json:"ongoing_campaigns"`
+}
+
+type Product struct {
+    PromotionDetail PromotionDetail `json:"promotion_detail"`
+}
+
+type PageInfo struct {
+    PageNumber int `json:"page_number"`
+    PageSize   int `json:"page_size"`
+    Total      int `json:"total"`
+}
+
+type ProductListData struct {
+    Products []Product `json:"products"`
+    PageInfo PageInfo  `json:"page_info"`
+}
+
 // ProductListResponse 商品列表响应
 type ProductListResponse struct {
     Code    int    `json:"code"`
     Message string `json:"message"`
-    Data    struct {
-        Products []Product `json:"products"`
-        Total    int      `json:"total"`
-    } `json:"data"`
-}
-
-// Product 商品信息
-type Product struct {
-    ProductID   int64   `json:"product_id"`
-    Name        string  `json:"name"`
-    Description string  `json:"description"`
-    Price       float64 `json:"price"`
-    Stock       int     `json:"stock"`
-    CreateTime  int64   `json:"create_time"`
-    UpdateTime  int64   `json:"update_time"`
+	UserMessage string `json:"user_message"`
+    Data    ProductListData `json:"data"`
 }
 
 // UpdateProductRequest 更新商品请求
@@ -56,4 +66,19 @@ type UpdateProductRequest struct {
     Description string  `json:"description,omitempty"`
     Price       float64 `json:"price,omitempty"`
     Stock       int     `json:"stock,omitempty"`
+}
+
+type MerchantShop struct {
+    Region string `json:"region"`
+    ShopID int64 `json:"shop_id"`
+}
+
+type MerchantShopList struct {
+	Shops []MerchantShop `json:"shops"`
+}
+
+type MerchantShopListResponse struct {
+    Code    int    `json:"code"`
+    Message string `json:"message"`
+    Data    MerchantShopList `json:"data"`
 }

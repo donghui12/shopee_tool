@@ -23,18 +23,26 @@ func (s *OrderService) UpdateOrder(cookies string, day int) error {
 		shopee.WithRetry(3, 5*time.Second),
 	)
 
-	// 3. 获取商品列表
-	productList, err := client.GetProductList(cookies)
+	// 3. 获取店铺列表
+	merchantShopList, err := client.GetMerchantShopList(cookies)
 	if err != nil {
 		return err
 	}
 
-	// 4. 遍历商品列表，更新库存
-	for _, product := range productList.Data.Products {
-		err = client.UpdateProductInfo(product.ProductID, cookies, day)
+	for _, shop := range merchantShopList {
+		// 4. 获取商品列表
+		productIdList, err := client.GetProductList(cookies, shop.ShopID, shop.Region)
 		if err != nil {
 			return err
 		}
+
+		for _, producId := range productIdList {
+			err = client.UpdateProductInfo(producId, cookies, day)
+			if err != nil {
+				return err
+			}
+		}
 	}
+
 	return nil
 }
