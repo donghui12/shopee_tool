@@ -4,6 +4,7 @@ import (
 	"time"
 	"shopee_tool/pkg/shopee"
 	"gorm.io/gorm"
+	"fmt"
 )
 
 
@@ -16,6 +17,7 @@ func NewOrderService(db *gorm.DB) *OrderService {
 }
 
 func (s *OrderService) UpdateOrder(cookies string, day int) error {
+	fmt.Printf("update order start\n")
 
 	// 2. 构建请求参数
 	client := shopee.NewClient(
@@ -28,6 +30,7 @@ func (s *OrderService) UpdateOrder(cookies string, day int) error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("merchant shop list: %v\n", len(merchantShopList))
 
 	for _, shop := range merchantShopList {
 		// 4. 获取商品列表

@@ -49,7 +49,7 @@ func TestGetProductList(t *testing.T) {
 
 func TestGetMerchantShopList(t *testing.T) {
 	client := NewClient()
-	cookies := "SPC_CNSC_SESSION=c9ad3caf0d1d2d15d25d6e752a6c5723_2_2375038"
+	cookies := "SPC_CNSC_SESSION=4ed26470f6a268de0cf09be7e8362d69_2_2375038;"
 	merchantShopList, err := client.GetMerchantShopList(cookies)
 	if err != nil {
 		t.Errorf("GetMerchantShopList() error = %v", err)

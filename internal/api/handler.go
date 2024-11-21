@@ -231,6 +231,7 @@ func (r *Router) handleUpdateOrder(c *gin.Context) {
 			Message: "获取 cookies 失败: " + err.Error(),
 		})
 	}
+	fmt.Printf("cookies: %s\n", cookies)
 
 	// 更新账户下全部商品的库存
 	err = r.orderService.UpdateOrder(cookies, req.Day)

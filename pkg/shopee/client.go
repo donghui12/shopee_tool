@@ -122,12 +122,15 @@ func (c *Client) Login(phone, password, vcode string) (string, error) {
 		return cookieString, fmt.Errorf("账号或密码错误")
 	}
 
+	fmt.Printf("resp header: %+v\n", resp.Header)
     // 保存 cookies
-    c.cookies = resp.Cookies()
+	// 从 set-cookie 中获取
+	cookies := resp.Header["Set-Cookie"]
 	// 将 cookie 转换为字符串
-	for _, cookie := range c.cookies {
-		if cookie.Name == "SPC_CNSC_SESSION" {
-			cookieString += cookie.Name + "=" + cookie.Value + "; "
+	for _, cookie := range cookies {
+		if strings.Contains(cookie, "SPC_CNSC_SESSION") {
+			cookie = strings.Split(cookie, ";")[0]
+			cookieString += cookie + "; "
 		}
 	}
 
@@ -153,6 +156,7 @@ func (c *Client) GetMerchantShopList(cookies string) ([]MerchantShop, error) {
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
+	fmt.Printf("merchant shop list response: %s\n", string(body))
 	if err != nil {
 		return nil, fmt.Errorf("read response body failed: %w", err)
 	}
@@ -333,6 +337,7 @@ func (c *Client) doRequest(method, path string, reqBody interface{}, cookies str
     // 设置 JSON 请求头
     req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Cookie", cookies)
+	req.Header.Set("Host", "seller.shopee.cn")
     c.setCommonHeaders(req)
 
     resp, err := c.executeWithRetry(req)
