@@ -31,13 +31,13 @@ func (s *OrderService) UpdateOrder(cookies string, day int) error {
 
 	for _, shop := range merchantShopList {
 		// 4. 获取商品列表
-		productIdList, err := client.GetProductList(cookies, shop.ShopID, shop.Region)
+		productIdList, err := client.GetProductList(cookies, string(shop.ShopID), shop.Region)
 		if err != nil {
 			return err
 		}
 
-		for _, producId := range productIdList {
-			err := client.UpdateProductInfo(productId, day, cookies, shop.ShopID, shop.Region)
+		for _, productId := range productIdList {
+			err := client.UpdateProductInfo(productId, day, cookies, string(shop.ShopID), shop.Region)
 			if err != nil {
 				return err
 			}
