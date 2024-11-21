@@ -37,7 +37,7 @@ func (s *OrderService) UpdateOrder(cookies string, day int) error {
 		}
 
 		for _, producId := range productIdList {
-			err = client.UpdateProductInfo(producId, cookies, day)
+			err := client.UpdateProductInfo(productId, day, cookies, shop.ShopID, shop.Region)
 			if err != nil {
 				return err
 			}

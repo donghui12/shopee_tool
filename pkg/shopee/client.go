@@ -261,7 +261,17 @@ type UpdateProductInfoResponse struct {
 }
 
 // UpdateProductInfo 更新商品信息
-func (c *Client) UpdateProductInfo(productID int64, cookies string, day int) error {
+func (c *Client) UpdateProductInfo(productID int64, day int, cookies, shopID,region string) error {
+	// SPC_CDS=45664b82-324a-4f15-92e8-6c0e8999a50f&SPC_CDS_VER=2&cnsc_shop_id=1350463891&cbsc_shop_region=my
+	SPC_CDS := uuid.New().String()
+	cookies += "SPC_CDS=" + SPC_CDS + ";"
+
+	updateProductInfoParams := url.Values{}
+	updateProductInfoParams.Set("SPC_CDS", SPC_CDS)
+	updateProductInfoParams.Set("SPC_CDS_VER", "2")
+	updateProductInfoParams.Set("cnsc_shop_id", shopID)
+	updateProductInfoParams.Set("cbsc_shop_region", region)
+
 	req := &UpdateProductInfoRequest{
 		ProductID: productID,
 		ProductInfo: ProductInfo{
@@ -274,16 +284,31 @@ func (c *Client) UpdateProductInfo(productID int64, cookies string, day int) err
 		IsDraft:   false,
 	}
 
-	var updateProductInfoResp UpdateProductInfoResponse
-	resp, err := c.doRequest(HTTPMethodPost, APIPathUpdateProductInfo, req, cookies)
+	APIUpdateProductInfo := APIPathUpdateProductInfo + "?" + updateProductInfoParams.Encode()
+	resp, err := c.doRequest(HTTPMethodPost, APIUpdateProductInfo, req, cookies)
 	if err != nil {
 		return fmt.Errorf("update product info failed: %w", err)
 	}
 
-	err = c.handleResponse(resp, &updateProductInfoResp)
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	fmt.Printf("update product info response: %s\n", string(body))
 	if err != nil {
-		return fmt.Errorf("handle update product info response failed: %w", err)
+		return fmt.Errorf("read response body failed: %w", err)
 	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("update product info failed: %s", string(body))
+	}
+	var updateProductInfoResp UpdateProductInfoResponse
+	err = json.Unmarshal(body, &updateProductInfoResp)
+	if err != nil {
+		return fmt.Errorf("unmarshal update product info response failed: %w", err)
+	}
+	if updateProductInfoResp.Code != ResponseCodeSuccess {
+		return fmt.Errorf("update product info failed: %s", updateProductInfoResp.Message)
+	}
+	fmt.Printf("update product info success: %v\n", updateProductInfoResp.Data.ProductID)
+	
 	return nil
 }
 

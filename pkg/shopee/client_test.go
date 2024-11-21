@@ -57,3 +57,16 @@ func TestGetMerchantShopList(t *testing.T) {
 	t.Logf("merchantShopList: %v", merchantShopList)
 }
 
+func TestUpdateProductInfo(t *testing.T) {
+	client := NewClient()
+	cookies := "SPC_CNSC_SESSION=c9ad3caf0d1d2d15d25d6e752a6c5723_2_2375038;"
+	productID := int64(28760843741)
+	day := 10
+	shopID := "1350463893"
+	region := "my"
+	err := client.UpdateProductInfo(productID, day, cookies, shopID, region)
+	if err != nil {
+		t.Errorf("UpdateProductInfo() error = %v", err)
+	}
+}
+
