@@ -122,16 +122,14 @@ func (c *Client) Login(phone, password, vcode string) (string, error) {
 		return cookieString, fmt.Errorf("账号或密码错误")
 	}
 
-	fmt.Printf("resp header: %+v\n", resp.Header)
-    // 保存 cookies
-	// 从 set-cookie 中获取
 	cookies := resp.Header["Set-Cookie"]
 	// 将 cookie 转换为字符串
 	for _, cookie := range cookies {
-		if strings.Contains(cookie, "SPC_CNSC_SESSION") {
-			cookie = strings.Split(cookie, ";")[0]
-			cookieString += cookie + "; "
+		if strings.Contains(cookie, "SPC_CDS") {
+			continue
 		}
+		cookie = strings.Split(cookie, ";")[0]
+		cookieString += cookie + "; "
 	}
 
     return cookieString, nil
@@ -156,7 +154,6 @@ func (c *Client) GetMerchantShopList(cookies string) ([]MerchantShop, error) {
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	fmt.Printf("merchant shop list response: %s\n", string(body))
 	if err != nil {
 		return nil, fmt.Errorf("read response body failed: %w", err)
 	}
@@ -169,6 +166,9 @@ func (c *Client) GetMerchantShopList(cookies string) ([]MerchantShop, error) {
 
 // GetProductList 获取商品列表
 func (c *Client) GetProductList(cookies, shopID, region string) ([]int64, error) {
+	fmt.Printf("cookies: %s\n", cookies)
+	fmt.Printf("shopID: %s\n", shopID)
+	fmt.Printf("region: %s\n", region)
 
 	var productIDs []int64
 	var productIDMap = make(map[int64]bool)
@@ -192,8 +192,6 @@ func (c *Client) GetProductList(cookies, shopID, region string) ([]int64, error)
 		getProductListParams.Set("page_size", strconv.Itoa(pageSize))
 
 		APIProductList := APIPathProductList + "?" + getProductListParams.Encode()
-		fmt.Printf("APIProductList: %s\n", APIProductList)
-		fmt.Printf("cookies: %s\n", cookies)
 
 		resp, err := c.doRequest(HTTPMethodGet, APIProductList, nil, cookies)
 		if err != nil {
@@ -266,7 +264,6 @@ type UpdateProductInfoResponse struct {
 
 // UpdateProductInfo 更新商品信息
 func (c *Client) UpdateProductInfo(productID int64, day int, cookies, shopID,region string) error {
-	// SPC_CDS=45664b82-324a-4f15-92e8-6c0e8999a50f&SPC_CDS_VER=2&cnsc_shop_id=1350463891&cbsc_shop_region=my
 	SPC_CDS := uuid.New().String()
 	cookies += "SPC_CDS=" + SPC_CDS + ";"
 
@@ -296,7 +293,6 @@ func (c *Client) UpdateProductInfo(productID int64, day int, cookies, shopID,reg
 
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
-	fmt.Printf("update product info response: %s\n", string(body))
 	if err != nil {
 		return fmt.Errorf("read response body failed: %w", err)
 	}
@@ -314,6 +310,55 @@ func (c *Client) UpdateProductInfo(productID int64, day int, cookies, shopID,reg
 	fmt.Printf("update product info success: %v\n", updateProductInfoResp.Data.ProductID)
 	
 	return nil
+}
+
+// GetOrSetShopResponse 获取或设置店铺响应
+type GetOrSetShopResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data struct {
+		ShopID string `json:"shop_id"`
+	} `json:"data"`
+}
+
+// curl 'https://seller.shopee.cn/api/cnsc/selleraccount/get_or_set_shop/?SPC_CDS=dbb46082-6eb0-473e-b6b9-42fe3be4103a&SPC_CDS_VER=2' \
+//   -H 'cookie: SPC_CDS=dbb46082-6eb0-473e-b6b9-42fe3be4103a; SPC_F=nESjUPBIRRyYopsGoJBhvCXpmStUnvLE; _QPWSDCXHZQA=73431902-f460-4a8c-8a7b-0227ccea192c; REC7iLP4Q=f2d09793-28b5-472a-b3bb-a9b10e49755a; SPC_CDS_CHAT=24f6c73f-f519-4680-8f0b-0297bd9d9d57; _sapid=6929d8fe0c56e7996c7414fcaf5271b5d13f9d1feae8a09bfad825fa; shopee_webUnique_ccd=8Etf2zGHigzjyP0AlZoaMQ%3D%3D%7CBs5vGnFM1HVL%2FHneBxdqub4pNjiMjkSje54zMErTYi9Dzbz6Bj5BgCfRIZzhjFUpcJKQFhQ3w36%2FnyQ0us0%3D%7CAcZgRkkzX%2FlXcy43%7C08%7C3; ds=5ed74830f63924150198cd2741f36563; UYOMAPJWEMDGJ=; SPC_CNSC_SESSION=670a7546a7c642bfb1706cc7bf72e946_2_2375038; SPC_SC_OFFLINE_TOKEN=eyJkYXRhIjoib2o4R3ZZN1djOGt4djhOL2x3djVqcjhzN2VsaXprVTBrVFY0eG5JeDlnQUhSWGt6ZDV2RmhCTDYyaGZ4MWU3enR0NWxidksySDVPWmY3MjZaajJxakhId2c4c3FrUVNOd2c1cWNFa0toSFFWQVo5anBaZ0xMbmo0c0kvcEJtdlZTOVZLSnBJTkNHbWNkazdaa0Q5S2pnPT0iLCJpdiI6IkRFaXlYcTI3TkxNRlN4eXhJcXIyaXc9PSIsInNpZ24iOiI1cVB2S2xiTmlSN0FnclNSSFdYdDRJRm9yT0xqUG5FdjlLOUpRbTVTSm5BbGJRdmw3TU42Q3I3VTliVlIrK0h2b3lvb1ZIaTZtVCtpL1kxV3JwOUhBUT09In0=; SPC_CNSC_TK=d4a06e168e89374680af0c0bbe7940cc; SPC_CNSC_UD=1_2375038; CNSC_SSO=TnB2WkNxNjdZS0VIanQ5SpRPARcuQKiFyEEdsBDcXMQJwwAnSOpdNgHSiObLuQFR' \
+//   --data-raw '{}' \
+//   --compressed
+func (c *Client) GetOrSetShop(cookies string) error {
+	// 构建请求
+	SPC_CDS := uuid.New().String()
+	cookies += "SPC_CDS=" + SPC_CDS + ";"
+
+	APIGetOrSetShop := APIPathGetOrSetShop + "?" + url.Values{"SPC_CDS": {SPC_CDS}, "SPC_CDS_VER": {"2"}}.Encode()
+	respBody := map[string]interface{}{}
+	resp, err := c.doRequest(HTTPMethodPost, APIGetOrSetShop, respBody, cookies)
+	if err != nil {
+		fmt.Printf("get or set shop request failed: %s\n", err)
+		return fmt.Errorf("get or set shop request failed: %w", err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("read response body failed: %s\n", err)
+		return fmt.Errorf("read response body failed: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("get or set shop request failed: %s\n", string(body))
+		return fmt.Errorf("get or set shop request failed: %s", string(body))
+	}
+	var getOrSetShopResp GetOrSetShopResponse
+	err = json.Unmarshal(body, &getOrSetShopResp)
+	if err != nil {
+		fmt.Printf("unmarshal get or set shop response failed: %s\n", err)
+		return fmt.Errorf("unmarshal get or set shop response failed: %w", err)
+	}
+	if getOrSetShopResp.Message != "success" {
+		fmt.Printf("get or set shop response failed: %s\n", getOrSetShopResp.Message)
+		return fmt.Errorf("get or set shop response failed: %s", getOrSetShopResp.Message)	
+	}
+	return nil
+
 }
 
 // doRequest 执行请求

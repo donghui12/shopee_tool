@@ -35,9 +35,9 @@ import (
 func TestGetProductList(t *testing.T) {
     client := NewClient()
 
-	cookies := "SPC_CNSC_SESSION=c9ad3caf0d1d2d15d25d6e752a6c5723_2_2375038;"
-	shopID := "1350463893"
-	region := "my"
+	cookies := "SPC_CNSC_SESSION=c23dc6dcd04bcb38a0e457f84cd66139_2_2375038;"
+	shopID := "1350463881"
+	region := "sg"
 
     productIDs, err := client.GetProductList(cookies, shopID, region)
     if err != nil {

@@ -14,7 +14,7 @@ const (
     APIPathProductDetail = "/api/v3/product/get_product_detail"
     APIPathProductUpdate = "/api/v3/product/update_product"
 	APIPathGetMerchantShopList = "/api/cnsc/selleraccount/get_merchant_shop_list/"
-    
+	APIPathGetOrSetShop = "/api/cnsc/selleraccount/get_or_set_shop/"
     // 订单相关接口
     APIPathOrderList = "/api/v3/order/get_order_list"
     APIPathOrderDetail = "/api/v3/order/get_order_detail"

@@ -38,6 +38,11 @@ func (s *LoginService) Login(username, password, vcode string) error {
 		return err
 	}
 
+	err = client.GetOrSetShop(cookies)
+	if err != nil {
+		return err
+	}
+
 	// 创建账户
 	err = s.createAccount(username, cookies)
 	if err != nil {

@@ -222,6 +222,7 @@ func (r *Router) handleUpdateOrder(c *gin.Context) {
 			Code:    400,
 			Message: "参数错误: " + err.Error(),
 		})
+		return
 	}
 	// 获取 cookies
 	cookies, err := r.accountService.GetCookies(req.Username)
@@ -230,8 +231,9 @@ func (r *Router) handleUpdateOrder(c *gin.Context) {
 			Code:    500,
 			Message: "获取 cookies 失败: " + err.Error(),
 		})
+		return
 	}
-	fmt.Printf("cookies: %s\n", cookies)
+	fmt.Printf("获取 cookies 成功: %s\n", cookies)
 
 	// 更新账户下全部商品的库存
 	err = r.orderService.UpdateOrder(cookies, req.Day)
@@ -240,6 +242,7 @@ func (r *Router) handleUpdateOrder(c *gin.Context) {
 			Code:    500,
 			Message: "更新库存失败: " + err.Error(),
 		})
+		return
 	}
 	c.JSON(http.StatusOK, UpdateMachineCodeResponse{
 		Code:    200,
