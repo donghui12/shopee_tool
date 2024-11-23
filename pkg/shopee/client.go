@@ -307,7 +307,6 @@ func (c *Client) UpdateProductInfo(productID int64, day int, cookies, shopID,reg
 	if updateProductInfoResp.Code != ResponseCodeSuccess {
 		return fmt.Errorf("update product info failed: %s", updateProductInfoResp.Message)
 	}
-	fmt.Printf("update product info success: %v\n", updateProductInfoResp.Data.ProductID)
 	
 	return nil
 }

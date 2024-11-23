@@ -8,6 +8,8 @@ import (
     "shopee_tool/internal/database"
     "shopee_tool/internal/service"
     "shopee_tool/internal/api"
+    "shopee_tool/pkg/pool"
+    "shopee_tool/pkg/constant"
 )
 
 func main() {
@@ -17,6 +19,10 @@ func main() {
     if err != nil {
         log.Fatalf("加载配置文件失败: %v", err)
     }
+	// 初始化全局 WorkerPool
+	pool.GlobalWorkerPool = pool.NewWorkerPool(constant.WorkerPoolSize)
+	pool.GlobalWorkerPool.Start()
+	defer pool.GlobalWorkerPool.Stop()
 
     // 初始化数据库连接
     db, err := database.InitDB(&cfg.Database)
