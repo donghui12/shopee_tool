@@ -1,4 +1,4 @@
 
 package constant
 
-const WorkerPoolSize = 5
+const WorkerPoolSize = 300

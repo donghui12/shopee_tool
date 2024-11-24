@@ -166,10 +166,6 @@ func (c *Client) GetMerchantShopList(cookies string) ([]MerchantShop, error) {
 
 // GetProductList 获取商品列表
 func (c *Client) GetProductList(cookies, shopID, region string) ([]int64, error) {
-	fmt.Printf("cookies: %s\n", cookies)
-	fmt.Printf("shopID: %s\n", shopID)
-	fmt.Printf("region: %s\n", region)
-
 	var productIDs []int64
 	var productIDMap = make(map[int64]bool)
 
@@ -262,33 +258,43 @@ type UpdateProductInfoResponse struct {
 	} `json:"data"`
 }
 
+
+// UpdateProductInfoReq 更新商品信息请求
+type UpdateProductInfoReq struct {
+	ProductId int64 `json:"product_id"`
+	DaysToShip int `json:"days_to_ship"`
+	Cookies string `json:"cookies"`
+	ShopID string `json:"shop_id"`
+	Region string `json:"region"`
+}
+
 // UpdateProductInfo 更新商品信息
-func (c *Client) UpdateProductInfo(productID int64, day int, cookies, shopID,region string) error {
+func (c *Client) UpdateProductInfo(updateProductInfoReq UpdateProductInfoReq) error {
 	SPC_CDS := uuid.New().String()
-	cookies += "SPC_CDS=" + SPC_CDS + ";"
+	updateProductInfoReq.Cookies += "SPC_CDS=" + SPC_CDS + ";"
 
 	updateProductInfoParams := url.Values{}
 	updateProductInfoParams.Set("SPC_CDS", SPC_CDS)
 	updateProductInfoParams.Set("SPC_CDS_VER", "2")
-	updateProductInfoParams.Set("cnsc_shop_id", shopID)
-	updateProductInfoParams.Set("cbsc_shop_region", region)
+	updateProductInfoParams.Set("cnsc_shop_id", updateProductInfoReq.ShopID)
+	updateProductInfoParams.Set("cbsc_shop_region", updateProductInfoReq.Region)
 
 	req := &UpdateProductInfoRequest{
-		ProductID: productID,
+		ProductID: updateProductInfoReq.ProductId,
 		ProductInfo: ProductInfo{
 			EnableModelLevelDts: false,
 			PreOrderInfo: PreOrderInfo{
 				PreOrder:    true,
-				DaysToShip:  day,
+				DaysToShip:  updateProductInfoReq.DaysToShip,
 			},
 		},
 		IsDraft:   false,
 	}
 
 	APIUpdateProductInfo := APIPathUpdateProductInfo + "?" + updateProductInfoParams.Encode()
-	resp, err := c.doRequest(HTTPMethodPost, APIUpdateProductInfo, req, cookies)
+	resp, err := c.doRequest(HTTPMethodPost, APIUpdateProductInfo, req, updateProductInfoReq.Cookies)
 	if err != nil {
-		return fmt.Errorf("update product info failed: %w", err)
+		return fmt.Errorf("update product info failed, request error: %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -297,7 +303,7 @@ func (c *Client) UpdateProductInfo(productID int64, day int, cookies, shopID,reg
 		return fmt.Errorf("read response body failed: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("update product info failed: %s", string(body))
+		return fmt.Errorf("update product info failed, status code: %d, message: %s", resp.StatusCode, string(body))
 	}
 	var updateProductInfoResp UpdateProductInfoResponse
 	err = json.Unmarshal(body, &updateProductInfoResp)
@@ -305,7 +311,7 @@ func (c *Client) UpdateProductInfo(productID int64, day int, cookies, shopID,reg
 		return fmt.Errorf("unmarshal update product info response failed: %w", err)
 	}
 	if updateProductInfoResp.Code != ResponseCodeSuccess {
-		return fmt.Errorf("update product info failed: %s", updateProductInfoResp.Message)
+		return fmt.Errorf("update product info failed, message: %s", updateProductInfoResp.UserMessage)
 	}
 	
 	return nil
@@ -320,10 +326,7 @@ type GetOrSetShopResponse struct {
 	} `json:"data"`
 }
 
-// curl 'https://seller.shopee.cn/api/cnsc/selleraccount/get_or_set_shop/?SPC_CDS=dbb46082-6eb0-473e-b6b9-42fe3be4103a&SPC_CDS_VER=2' \
-//   -H 'cookie: SPC_CDS=dbb46082-6eb0-473e-b6b9-42fe3be4103a; SPC_F=nESjUPBIRRyYopsGoJBhvCXpmStUnvLE; _QPWSDCXHZQA=73431902-f460-4a8c-8a7b-0227ccea192c; REC7iLP4Q=f2d09793-28b5-472a-b3bb-a9b10e49755a; SPC_CDS_CHAT=24f6c73f-f519-4680-8f0b-0297bd9d9d57; _sapid=6929d8fe0c56e7996c7414fcaf5271b5d13f9d1feae8a09bfad825fa; shopee_webUnique_ccd=8Etf2zGHigzjyP0AlZoaMQ%3D%3D%7CBs5vGnFM1HVL%2FHneBxdqub4pNjiMjkSje54zMErTYi9Dzbz6Bj5BgCfRIZzhjFUpcJKQFhQ3w36%2FnyQ0us0%3D%7CAcZgRkkzX%2FlXcy43%7C08%7C3; ds=5ed74830f63924150198cd2741f36563; UYOMAPJWEMDGJ=; SPC_CNSC_SESSION=670a7546a7c642bfb1706cc7bf72e946_2_2375038; SPC_SC_OFFLINE_TOKEN=eyJkYXRhIjoib2o4R3ZZN1djOGt4djhOL2x3djVqcjhzN2VsaXprVTBrVFY0eG5JeDlnQUhSWGt6ZDV2RmhCTDYyaGZ4MWU3enR0NWxidksySDVPWmY3MjZaajJxakhId2c4c3FrUVNOd2c1cWNFa0toSFFWQVo5anBaZ0xMbmo0c0kvcEJtdlZTOVZLSnBJTkNHbWNkazdaa0Q5S2pnPT0iLCJpdiI6IkRFaXlYcTI3TkxNRlN4eXhJcXIyaXc9PSIsInNpZ24iOiI1cVB2S2xiTmlSN0FnclNSSFdYdDRJRm9yT0xqUG5FdjlLOUpRbTVTSm5BbGJRdmw3TU42Q3I3VTliVlIrK0h2b3lvb1ZIaTZtVCtpL1kxV3JwOUhBUT09In0=; SPC_CNSC_TK=d4a06e168e89374680af0c0bbe7940cc; SPC_CNSC_UD=1_2375038; CNSC_SSO=TnB2WkNxNjdZS0VIanQ5SpRPARcuQKiFyEEdsBDcXMQJwwAnSOpdNgHSiObLuQFR' \
-//   --data-raw '{}' \
-//   --compressed
+// GetOrSetShop 获取或设置店铺
 func (c *Client) GetOrSetShop(cookies string) error {
 	// 构建请求
 	SPC_CDS := uuid.New().String()

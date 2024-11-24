@@ -211,7 +211,7 @@ func (r *Router) handleVerifyActiveCode(c *gin.Context) {
 
 type UpdateOrderRequest struct {
 	Username string `json:"username"`
-	Day      int    `json:"day"`
+	Days     int    `json:"days"`
 }
 
 // 更新账户下全部商品的库存
@@ -233,10 +233,9 @@ func (r *Router) handleUpdateOrder(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Printf("获取 cookies 成功: %s\n", cookies)
 
 	// 更新账户下全部商品的库存
-	err = r.orderService.UpdateOrder(cookies, req.Day)
+	err = r.orderService.UpdateOrder(cookies, req.Days)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
 			Code:    500,
