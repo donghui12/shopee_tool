@@ -1,14 +1,16 @@
 package service
 
 import (
-	"shopee_tool/pkg/shopee"
-	"gorm.io/gorm"
-	"fmt"
 	"strings"
 	"strconv"
-	"shopee_tool/pkg/pool"
 	"sync"
-	"shopee_tool/pkg/constant"
+
+	"gorm.io/gorm"
+	"go.uber.org/zap"
+
+	"shopee_tool/pkg/pool"
+	"shopee_tool/pkg/shopee"
+	"shopee_tool/pkg/logger"
 )
 
 
@@ -20,30 +22,22 @@ func NewOrderService(db *gorm.DB) *OrderService {
 	return &OrderService{db: db}
 }
 
-func (s *OrderService) UpdateOrder(cookies string, day int) error {
+func (s *OrderService) UpdateOrder(session string, day int) error {
 
 	// 2. 构建请求参数
 	client := shopee.GetShopeeClient()
 
-	// 获取 session
-	session := ""
-	sessionList := strings.Split(cookies, ";")
-	for _, s := range sessionList {
-		if strings.Contains(s, constant.ShopeeSessionKey) {
-			session = s
-			break
-		}
-	}
-
-	session += ";"
-	fmt.Printf("session: %s\n", session)
+	logger.Info("Retrieved merchant shop list",
+		zap.String("session", session),
+	)
 
 	// 3. 获取店铺列表
 	merchantShopList, err := client.GetMerchantShopList(session)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("merchant shop list: %v\n", len(merchantShopList))
+
+	logger.Info("获取店铺列表", zap.Int("shop_count", len(merchantShopList)))
 
 	// 4. 获取店铺信息
 	totalShopInfoList := make([]shopee.UpdateProductInfoReq, 0)
@@ -54,7 +48,8 @@ func (s *OrderService) UpdateOrder(cookies string, day int) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("shop info list: %v\n", len(shopInfoList))
+		logger.Info("获取店铺商品列表", zap.String("shop_id", shopId), 
+			zap.Int("product_count", len(shopInfoList)))
 		for _, productId := range shopInfoList {
 			totalShopInfoList = append(totalShopInfoList, shopee.UpdateProductInfoReq{
 				ProductId: productId,
@@ -65,6 +60,7 @@ func (s *OrderService) UpdateOrder(cookies string, day int) error {
 			})
 		}
 	}
+	logger.Info("获取商品列表", zap.Int("total_product_count", len(totalShopInfoList)))
 
 	pool := pool.GetPool()
 	wg := sync.WaitGroup{}
@@ -73,13 +69,15 @@ func (s *OrderService) UpdateOrder(cookies string, day int) error {
 		pool.Submit(func() {
 			err := client.UpdateProductInfo(req)
 			if err != nil {
-				fmt.Printf("更新商品信息: %v 失败: %v\n", req.ProductId, err)
+				logger.Error("更新商品信息失败", zap.Int64("product_id", req.ProductId),
+					zap.String("shop_id", req.ShopID), zap.String("region", req.Region),
+					zap.Error(err))
 			}
 			wg.Done()
 		})
 	}
 	wg.Wait()
-	fmt.Printf("所有店铺更新完成\n")
+	logger.Info("所有店铺更新完成")
 
 	return nil
 }

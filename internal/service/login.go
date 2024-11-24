@@ -1,10 +1,13 @@
 package service
 
 import (
+	"fmt"
+	"strings"
+
+	"gorm.io/gorm"
 	"shopee_tool/internal/database/models"
 	"shopee_tool/pkg/shopee"
-	"fmt"
-	"gorm.io/gorm"
+	"shopee_tool/pkg/constant"
 )
 
 type LoginService struct {
@@ -49,10 +52,20 @@ func (s *LoginService) Login(username, password, vcode string) error {
 }
 
 func (s *LoginService) createAccount(username string, cookies string) error {
+	session := ""
+	sessionList := strings.Split(cookies, ";")
+	for _, s := range sessionList {
+		if strings.Contains(s, constant.ShopeeSessionKey) {
+			session = s
+			break
+		}
+	}
+	session += ";"
 	// 创建账户
 	account := models.Account{
 		Username: username,
 		Cookies:  cookies,
+		Session:  session,
 	}
 
 	// 保存到数据库, 如果账户已存在则更新
@@ -61,6 +74,7 @@ func (s *LoginService) createAccount(username string, cookies string) error {
 	if result.Error == nil {
 		// 更新账户
 		existingAccount.Cookies = cookies
+		existingAccount.Session = session
 		s.db.Save(&existingAccount)
 		return nil
 	}

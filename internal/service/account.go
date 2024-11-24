@@ -60,3 +60,12 @@ func (s *AccountService) GetCookies(username string) (string, error) {
     }
     return account.Cookies, nil
 }
+
+func (s *AccountService) GetSession(username string) (string, error) {
+    var account models.Account
+    result := s.db.Where("username = ?", username).First(&account)
+    if result.Error != nil {
+        return "", result.Error
+    }
+    return account.Session, nil
+}

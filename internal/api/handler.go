@@ -225,7 +225,7 @@ func (r *Router) handleUpdateOrder(c *gin.Context) {
 		return
 	}
 	// 获取 cookies
-	cookies, err := r.accountService.GetCookies(req.Username)
+	session, err := r.accountService.GetSession(req.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
 			Code:    500,
@@ -235,7 +235,7 @@ func (r *Router) handleUpdateOrder(c *gin.Context) {
 	}
 
 	// 更新账户下全部商品的库存
-	err = r.orderService.UpdateOrder(cookies, req.Days)
+	err = r.orderService.UpdateOrder(session, req.Days)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, UpdateMachineCodeResponse{
 			Code:    500,

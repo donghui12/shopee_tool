@@ -11,6 +11,7 @@ type Account struct {
 	MachineCode string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
 	ActiveCode  string    `gorm:"type:varchar(255);not null"`             // 修改为 varchar 类型
 	Cookies     string    `gorm:"type:text"`
+    Session     string    `gorm:"type:text"`
     CreatedAt time.Time `gorm:"index"`
     UpdatedAt time.Time
 }

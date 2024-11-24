@@ -1,13 +1,14 @@
 package pool
 
 import (
-    "github.com/panjf2000/ants"
     "sync"
+
+    "github.com/panjf2000/ants"
 )
 
 var (
- pool *ants.Pool
- once sync.Once
+	pool *ants.Pool
+	once sync.Once
 )
 
 // 初始化全局 WorkerPool
