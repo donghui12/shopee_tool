@@ -1,7 +1,6 @@
 package service
 
 import (
-	"time"
 	"shopee_tool/pkg/shopee"
 	"gorm.io/gorm"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"strconv"
 	"shopee_tool/pkg/pool"
 	"sync"
+	"shopee_tool/pkg/constant"
 )
 
 
@@ -23,16 +23,13 @@ func NewOrderService(db *gorm.DB) *OrderService {
 func (s *OrderService) UpdateOrder(cookies string, day int) error {
 
 	// 2. 构建请求参数
-	client := shopee.NewClient(
-		shopee.WithTimeout(30*time.Second),
-		shopee.WithRetry(3, 5*time.Second),
-	)
+	client := shopee.GetShopeeClient()
 
 	// 获取 session
 	session := ""
 	sessionList := strings.Split(cookies, ";")
 	for _, s := range sessionList {
-		if strings.Contains(s, "SPC_CNSC_SESSION") {
+		if strings.Contains(s, constant.ShopeeSessionKey) {
 			session = s
 			break
 		}

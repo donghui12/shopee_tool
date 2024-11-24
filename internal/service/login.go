@@ -3,7 +3,6 @@ package service
 import (
 	"shopee_tool/internal/database/models"
 	"shopee_tool/pkg/shopee"
-	"time"
 	"fmt"
 	"gorm.io/gorm"
 )
@@ -27,10 +26,7 @@ type CookieInfo struct {
 }
 
 func (s *LoginService) Login(username, password, vcode string) error {
-	client := shopee.NewClient(
-		shopee.WithTimeout(30*time.Second),
-		shopee.WithRetry(3, 5*time.Second),
-	)
+	client := shopee.GetShopeeClient()
 	
 	// 执行登录
 	cookies, err := client.Login(username, password, vcode)

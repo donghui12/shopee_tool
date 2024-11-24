@@ -33,7 +33,7 @@ import (
 // }
 
 func TestGetProductList(t *testing.T) {
-    client := NewClient()
+    client := GetShopeeClient()
 
 	cookies := "SPC_CNSC_SESSION=c23dc6dcd04bcb38a0e457f84cd66139_2_2375038;"
 	shopID := "1350463881"
@@ -48,7 +48,7 @@ func TestGetProductList(t *testing.T) {
 } 
 
 func TestGetMerchantShopList(t *testing.T) {
-	client := NewClient()
+	client := GetShopeeClient()
 	cookies := "SPC_CNSC_SESSION=4ed26470f6a268de0cf09be7e8362d69_2_2375038;"
 	merchantShopList, err := client.GetMerchantShopList(cookies)
 	if err != nil {
@@ -58,7 +58,7 @@ func TestGetMerchantShopList(t *testing.T) {
 }
 
 func TestUpdateProductInfo(t *testing.T) {
-	client := NewClient()
+	client := GetShopeeClient()
 	cookies := "SPC_CNSC_SESSION=c9ad3caf0d1d2d15d25d6e752a6c5723_2_2375038;"
 	productID := int64(28760843741)
 	day := 10

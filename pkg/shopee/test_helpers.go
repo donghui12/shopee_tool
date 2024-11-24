@@ -5,7 +5,6 @@ import (
     "os"
     "path/filepath"
     "testing"
-    "time"
 )
 
 // TestConfig 测试配置结构
@@ -21,11 +20,7 @@ type TestConfig struct {
 // setupTestClient 创建测试客户端
 func setupTestClient(t *testing.T) (*Client, *TestConfig) {
     config := loadTestConfig(t)
-    client := NewClient(
-        WithBaseURL(config.BaseURL),
-        WithTimeout(30*time.Second),
-        WithRetry(3, 5*time.Second),
-    )
+    client := GetShopeeClient()
     return client, config
 }
 

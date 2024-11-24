@@ -11,7 +11,11 @@ import (
 	"net/url"
 	"strconv"
 	"github.com/google/uuid"
+	"sync"
 )
+
+var shopeeClient *Client
+var once sync.Once
 
 type Client struct {
     baseURL     string
@@ -46,23 +50,23 @@ func WithRetry(times int, delay time.Duration) ClientOption {
     }
 }
 
-// NewClient 创建新的客户端
-func NewClient(options ...ClientOption) *Client {
-    client := &Client{
-        baseURL: BaseSellerURL,
-        httpClient: &http.Client{
-            Timeout: 30 * time.Second,
-        },
-        userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        retryTimes:  3,
-        retryDelay:  5 * time.Second,
-    }
+// InitShopeeClient 创建新的客户端
+func InitShopeeClient() {
+	once.Do(func() {
+		shopeeClient = &Client{
+			baseURL: BaseSellerURL,
+			httpClient: &http.Client{
+				Timeout: 30 * time.Second,
+			},
+			userAgent:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+			retryTimes:  3,
+			retryDelay:  5 * time.Second,
+		}
+	})
+}
 
-    for _, option := range options {
-        option(client)
-    }
-
-    return client
+func GetShopeeClient() *Client {
+	return shopeeClient
 }
 
 // Login 登录
@@ -393,29 +397,4 @@ func (c *Client) doRequest(method, path string, reqBody interface{}, cookies str
     }
 
     return resp, nil
-}
-
-// handleResponse 处理响应
-func (c *Client) handleResponse(resp *http.Response, result interface{}) error {
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        return fmt.Errorf("read response body failed: %w", err)
-    }
-
-    if resp.StatusCode != http.StatusOK {
-        return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
-    }
-
-    if result == nil {
-        return nil
-    }
-
-	var productListResp ProductListResponse
-
-    if err := json.Unmarshal(body, &productListResp); err != nil {
-        return fmt.Errorf("unmarshal response failed: %w", err)
-    }
-	fmt.Printf("productListResp: %v\n", productListResp.Data.Products)
-
-    return nil
 }
