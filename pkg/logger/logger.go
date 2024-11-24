@@ -2,6 +2,7 @@ package logger
 
 import (
     "os"
+    "time"
 
     "go.uber.org/zap"
     "go.uber.org/zap/zapcore"
@@ -12,8 +13,13 @@ var log *zap.Logger
 func init() {
     config := zap.NewProductionConfig()
     config.EncoderConfig.TimeKey = "timestamp"
-    config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+    // config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+    // config.EncoderConfig.EncodeTime = zapcore.EpochTimeEncoder
+    // config.EncoderConfig.EncodeTime = zapcore.EpochNanosTimeEncoder
+    config.EncoderConfig.EncodeTime = CustomTimeEncoder()
+
     
+
     // 设置日志级别
     config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
     
@@ -64,4 +70,11 @@ func With(fields ...zap.Field) *zap.Logger {
 // Sync flushes any buffered log entries
 func Sync() error {
     return log.Sync()
+}
+
+// 自定义时间格式示例
+func CustomTimeEncoder() zapcore.TimeEncoder {
+    return func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+        enc.AppendString(t.Format("2006-01-02 15:04:05.000"))
+    }
 }

@@ -46,6 +46,7 @@ func main() {
 	orderService := service.NewOrderService(db)
 
     // 创建 Gin 引擎
+    gin.SetMode(gin.ReleaseMode)
     engine := gin.Default()
 
     // 设置路由
